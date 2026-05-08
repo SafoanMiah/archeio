@@ -111,6 +111,7 @@ pub fn run() {
             commands::oauth_save_client,
             commands::youtube_channel_title,
             commands::youtube_update_title,
+            commands::youtube_update_privacy,
         ])
         .build(tauri::generate_context!())
         .expect("error while building archeio")

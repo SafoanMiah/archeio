@@ -27,6 +27,8 @@ export const api = {
   youtubeChannelTitle: () => invoke<string>("youtube_channel_title"),
   youtubeUpdateTitle: (id: string, newTitle: string) =>
     invoke<Broadcast>("youtube_update_title", { id, newTitle }),
+  youtubeUpdatePrivacy: (id: string, newPrivacy: "private" | "unlisted" | "public") =>
+    invoke<Broadcast>("youtube_update_privacy", { id, newPrivacy }),
 };
 
 export const events = {

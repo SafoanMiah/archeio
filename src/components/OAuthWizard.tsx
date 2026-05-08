@@ -48,7 +48,7 @@ const STEPS: Step[] = [
   {
     title: "Create a Desktop OAuth client",
     body:
-      "+ Create Credentials → OAuth client ID → Application type: Desktop app → Name it \"Archeio Desktop\" → Create. A popup appears with your Client ID and Client Secret.",
+      "+ Create Clients → OAuth client ID → Application type: Desktop app → Name it \"Archeio Desktop\" → Create. A popup appears with your Client ID and Client Secret.",
     url: "https://console.cloud.google.com/apis/credentials/oauthclient",
   },
   {

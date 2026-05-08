@@ -57,7 +57,7 @@ pub async fn channel_title() -> Result<String> {
 /// flips the broadcast to LIVE on first ingest and to COMPLETE when the
 /// stream ends - so we don't need to call `liveBroadcasts.transition`.
 ///
-/// Privacy is hardcoded to "unlisted" (matches the README recommendation).
+/// Privacy is hardcoded to "private" - only the channel owner can view.
 /// `made_for_kids` is hardcoded to false (required field; gameplay clips are
 /// not children's content).
 pub async fn provision_broadcast(title: &str) -> Result<ProvisionedBroadcast> {
@@ -218,7 +218,7 @@ async fn insert_live_broadcast(title: &str) -> Result<(String, String)> {
             "scheduledStartTime": scheduled,
         },
         "status": {
-            "privacyStatus": "unlisted",
+            "privacyStatus": "private",
             "selfDeclaredMadeForKids": false,
         },
         "contentDetails": {
@@ -264,6 +264,72 @@ async fn bind_broadcast_to_stream(broadcast_id: &str, stream_id: &str) -> Result
         let s = resp.status();
         let body = resp.text().await.unwrap_or_default();
         return Err(Error::Other(format!("liveBroadcasts.bind failed ({s}): {body}")));
+    }
+    Ok(())
+}
+
+/// Update only the `privacyStatus` on a video. YouTube's videos.update needs
+/// the full status resource, so we GET first and PUT back. Accepts
+/// "private", "unlisted", or "public" - anything else is rejected client-side
+/// before we burn API quota.
+pub async fn update_video_privacy(video_id: &str, new_privacy: &str) -> Result<()> {
+    if !matches!(new_privacy, "private" | "unlisted" | "public") {
+        return Err(Error::Other(format!(
+            "invalid privacy '{new_privacy}' (expected private/unlisted/public)"
+        )));
+    }
+
+    #[derive(Deserialize)]
+    struct GetResp {
+        items: Vec<GetItem>,
+    }
+    #[derive(Deserialize)]
+    struct GetItem {
+        status: serde_json::Value,
+    }
+
+    let url = format!(
+        "{API}/videos?id={id}&part=status",
+        id = urlencoding::encode(video_id)
+    );
+    let resp: GetResp = get_json(&url).await?;
+    let mut status = resp
+        .items
+        .into_iter()
+        .next()
+        .ok_or_else(|| Error::Other("video not found or not owned by this account".into()))?
+        .status;
+
+    if let Some(map) = status.as_object_mut() {
+        map.insert(
+            "privacyStatus".into(),
+            serde_json::Value::String(new_privacy.into()),
+        );
+    } else {
+        return Err(Error::Other("unexpected status shape from YouTube".into()));
+    }
+
+    let body = serde_json::json!({
+        "id": video_id,
+        "status": status,
+    });
+
+    let token = oauth::access_token().await?;
+    let put_url = format!("{API}/videos?part=status");
+    let resp = reqwest::Client::new()
+        .put(&put_url)
+        .bearer_auth(token)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| Error::Other(format!("videos.update privacy: {e}")))?;
+
+    if !resp.status().is_success() {
+        let s = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err(Error::Other(format!(
+            "videos.update privacy failed ({s}): {text}"
+        )));
     }
     Ok(())
 }

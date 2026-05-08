@@ -22,6 +22,12 @@ pub struct Broadcast {
     pub ended_at: Option<DateTime<Utc>>,
     pub youtube_video_id: Option<String>,
     pub title: Option<String>,
+    /// "private" | "unlisted" | "public". Mirrors the YouTube video's
+    /// privacyStatus. Set to "private" at broadcast creation; `None` for
+    /// legacy rows from older versions of the app (UI falls back to
+    /// "private" when displaying).
+    #[serde(default)]
+    pub privacy: Option<String>,
 }
 
 pub struct Library {
@@ -60,6 +66,7 @@ impl Library {
             ended_at: None,
             youtube_video_id: Some(video_id.to_string()),
             title: Some(title.to_string()),
+            privacy: Some("private".to_string()),
         };
         {
             let mut v = self.items.lock();
@@ -77,6 +84,20 @@ impl Library {
             let mut v = self.items.lock();
             if let Some(row) = v.iter_mut().find(|r| r.id == id) {
                 row.ended_at = Some(ended_at);
+                row_out = Some(row.clone());
+            }
+        }
+        let row = row_out.ok_or_else(|| Error::Other("no broadcast with that id".into()))?;
+        self.save()?;
+        Ok(row)
+    }
+
+    pub fn set_privacy(&self, id: &str, privacy: &str) -> Result<Broadcast> {
+        let mut row_out = None;
+        {
+            let mut v = self.items.lock();
+            if let Some(row) = v.iter_mut().find(|r| r.id == id) {
+                row.privacy = Some(privacy.to_string());
                 row_out = Some(row.clone());
             }
         }

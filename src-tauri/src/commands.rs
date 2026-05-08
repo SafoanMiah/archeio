@@ -131,3 +131,23 @@ pub async fn youtube_update_title(
     let _ = app.emit("library-changed", ());
     Ok(row)
 }
+
+#[tauri::command]
+pub async fn youtube_update_privacy(
+    library: State<'_, Arc<Library>>,
+    app: AppHandle,
+    id: String,
+    new_privacy: String,
+) -> Result<Broadcast> {
+    let video_id = library
+        .list()
+        .into_iter()
+        .find(|r| r.id == id)
+        .and_then(|r| r.youtube_video_id)
+        .ok_or_else(|| Error::Other("broadcast has no linked YouTube video".into()))?;
+
+    youtube::update_video_privacy(&video_id, &new_privacy).await?;
+    let row = library.set_privacy(&id, &new_privacy)?;
+    let _ = app.emit("library-changed", ());
+    Ok(row)
+}

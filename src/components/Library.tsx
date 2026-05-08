@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { api, embedUrl, events, studioEditUrl } from "@/lib/api";
-import type { Broadcast } from "@/lib/types";
+import type { Broadcast, Privacy } from "@/lib/types";
 import { cx, formatDuration, formatWhen } from "@/lib/utils";
 import { useToast } from "@/components/ToastProvider";
 
@@ -217,6 +217,18 @@ function LibraryRow({
     }
   };
 
+  const savePrivacy = async (next: Privacy) => {
+    setBusy(true);
+    try {
+      await api.youtubeUpdatePrivacy(row.id, next);
+      toast.push(`Privacy set to ${next}.`, "info");
+    } catch (e) {
+      toast.push(errMsg(e), "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <li
       className={cx(
@@ -311,6 +323,19 @@ function LibraryRow({
                 <ExternalLink className="h-3 w-3" />
                 Edit
               </button>
+            )}
+            {!compact && (
+              <select
+                value={(row.privacy as Privacy | null) ?? "private"}
+                onChange={(e) => void savePrivacy(e.target.value as Privacy)}
+                disabled={busy}
+                className="ml-auto rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1 text-[11px] text-zinc-300 focus:border-zinc-600 focus:outline-none disabled:opacity-50"
+                title="Change video privacy on YouTube"
+              >
+                <option value="private">Private</option>
+                <option value="unlisted">Unlisted</option>
+                <option value="public">Public</option>
+              </select>
             )}
           </div>
         </div>

@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* !important so no Tailwind utility class on <body> can paint a background
+ * - the overlay window loads the same bundle and any colour here would
+ * leak into its transparent rounded corners. The main Shell paints its
+ * own bg-zinc-950 on its outer div. */
+html, body, #root { height: 100%; background: transparent !important; }
+body { font-family: theme('fontFamily.sans'); }
+
+/* Fluid root font-size so every rem-based dimension (text, paddings, button
+ * widths, max-w containers) scales proportionally as the user resizes the
+ * window. Range chosen so 880px (the configured minWidth) lands at 14px and
+ * 1700px+ caps at 22px - prevents tiny text on small windows and absurdly
+ * big text on ultra-wide monitors. The overlay window is 160px wide, so vw
+ * collapses to ~1.6px and the clamp pins it at the 14px floor anyway. */
+html { font-size: clamp(14px, 1vw + 5px, 22px); }
+
+/* The main window is sized to fit its content; nothing should scroll. The
+ * overlay window has no scrollable content either. Killing scroll prevents
+ * a stray scrollbar from reading as a "wider gray box" on the right edge. */
+html, body { overflow: hidden; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #18181b; }
+::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast-enter { animation: toastIn 0.18s ease-out; }

@@ -1,0 +1,36 @@
+# Node
+node_modules/
+dist/
+.vite/
+.vscode/
+
+# Rust / Tauri
+target/
+src-tauri/target/
+src-tauri/gen/
+# Cargo.lock IS committed — Archeio is a binary, not a library.
+
+# Local env
+.env
+.env.local
+
+# Claude Code local settings
+.claude/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Local test artifacts
+test.mp4
+*.test.mp4
+
+# Bundled FFmpeg binary - too large to commit (~100MB). Run
+# scripts/fetch-ffmpeg.ps1 (or follow README) before npm run tauri:build.
+src-tauri/binaries/ffmpeg.exe
